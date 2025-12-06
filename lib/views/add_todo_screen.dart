@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:todo_riverpod/data/todo_model.dart';
+import '../controller/todo_controller.dart';
 
-class AddTodoScreen extends StatefulWidget {
+class AddTodoScreen extends ConsumerStatefulWidget {
   const AddTodoScreen({super.key});
 
   @override
-  State<AddTodoScreen> createState() => _AddTodoScreenState();
+  ConsumerState<AddTodoScreen> createState() => _AddTodoScreenState();
 }
 
-class _AddTodoScreenState extends State<AddTodoScreen> {
+class _AddTodoScreenState extends ConsumerState<AddTodoScreen> {
   final textController = TextEditingController();
   DateTime? selectedDate;
 
@@ -32,24 +35,18 @@ class _AddTodoScreenState extends State<AddTodoScreen> {
         backgroundColor: Colors.green,
         elevation: 0,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             const Text(
               "Create New Task",
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 20),
 
-            /// TEXT FIELD
+            // TEXT FIELD
             TextField(
               controller: textController,
               decoration: InputDecoration(
@@ -63,11 +60,14 @@ class _AddTodoScreenState extends State<AddTodoScreen> {
 
             const SizedBox(height: 20),
 
-            /// DATE PICKER BUTTON
+            // DATE PICKER BUTTON
             InkWell(
               onTap: pickDate,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 14,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey.shade400),
@@ -89,24 +89,28 @@ class _AddTodoScreenState extends State<AddTodoScreen> {
 
             const SizedBox(height: 40),
 
-            /// SAVE BUTTON
+            // SAVE BUTTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: Colors.green,
+                  minimumSize: const Size.fromHeight(50),
                 ),
-                onPressed: () {
-                  // Save logic here
+                onPressed: () async {
+                  if(textController.text.isEmpty || selectedDate == null) return;
+
+                  await ref.read(todoControllerProvider.notifier).addTodo(
+                      TodoModel(
+                        title: textController.text,
+                        date: selectedDate!,
+                      )
+                  );
+
+                  Navigator.pop(context);
                 },
-                child: const Text(
-                  "Save Todo",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
+                child: const Text("Save Todo", style: TextStyle(fontSize: 18)),
+              )
+
             ),
           ],
         ),
