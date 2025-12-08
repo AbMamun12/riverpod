@@ -54,6 +54,7 @@ CREATE TABLE todos(
     final res = await db.query("todos");
 
     return res.map((e) => TodoModel(
+      id: e['id'] as int,
       title: e['title'] as String,
       date: DateTime.parse(e['date'] as String),
       isCompleted: (e['isCompleted'] as int) == 1,
@@ -72,11 +73,13 @@ CREATE TABLE todos(
     );
 
     return res.map((e) => TodoModel(
+      id: e['id'] as int,
       title: e['title'] as String,
       date: DateTime.parse(e['date'] as String),
       isCompleted: (e['isCompleted'] as int) == 1,
     )).toList();
   }
+
 
   Future<int> update(int id, bool complete) async {
     final db = await instance.database;

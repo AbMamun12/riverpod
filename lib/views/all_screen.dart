@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:todo_riverpod/widgets/status_dialog.dart';
 import '../controller/todo_controller.dart';
 import '../widgets/todo_card.dart';
-
 class AllScreen extends ConsumerStatefulWidget {
   const AllScreen({super.key});
 
@@ -25,9 +25,7 @@ class _AllScreenState extends ConsumerState<AllScreen> {
 
     return todos.when(
       data: (list) {
-        if (list.isEmpty) {
-          return const Center(child: Text("No todos yet"));
-        }
+        if (list.isEmpty) return const Center(child: Text("No todos yet"));
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -40,56 +38,7 @@ class _AllScreenState extends ConsumerState<AllScreen> {
               return TodoCard(
                 todo: t,
                 onMoreTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) {
-                      bool tempStatus = t.isCompleted; // initially current status
-
-                      return AlertDialog(
-                        title: const Text("Change Status"),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RadioListTile<bool>(
-                              title: const Text("Complete"),
-                              value: true,
-                              groupValue: tempStatus,
-                              onChanged: (v) {
-                                tempStatus = v!;
-                                (context as Element).markNeedsBuild();
-                              },
-                            ),
-                            RadioListTile<bool>(
-                              title: const Text("Incomplete"),
-                              value: false,
-                              groupValue: tempStatus,
-                              onChanged: (v) {
-                                tempStatus = v!;
-                                (context as Element).markNeedsBuild();
-                              },
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            child: const Text("Cancel"),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          TextButton(
-                            child: const Text("OK"),
-                            onPressed: () {
-                              // update todo status inside Riverpod controller
-                              ref.read(todoControllerProvider.notifier).updateStatus(
-                                t,
-                                tempStatus,
-                              );
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
+                  showStatusDialog(context, ref, t);
                 },
               );
             },
