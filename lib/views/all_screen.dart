@@ -1,126 +1,96 @@
-/*
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../controller/todo_controller.dart';
+import '../widgets/todo_card.dart';
 
-class AllScreen extends ConsumerWidget {
+class AllScreen extends ConsumerStatefulWidget {
   const AllScreen({super.key});
 
   @override
-  Widget build(context, ref) {
-    final todos = ref.watch(todoControllerProvider);
-
-    return todos.when(
-      data: (list){
-        if(list.isEmpty){
-          return const Center(
-            child: Text(
-              "No todos yet",
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(todoControllerProvider.notifier).getAllTodos();
-          },
-          child: ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: list.length,
-            itemBuilder: (_, i){
-              final t = list[i];
-              return Card(
-                elevation: 1,
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                child: ListTile(
-                  title: Text(
-                    t.title,
-                    style: TextStyle(
-                      decoration: t.isCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  subtitle: Text(t.date.toString().substring(0,10)),
-                  trailing: t.isCompleted
-                      ? const Icon(Icons.check, color: Colors.green)
-                      : null,
-                ),
-              );
-            },
-          ),
-        );
-      },
-      loading: ()=> const Center(child: CircularProgressIndicator()),
-      error: (e,_)=> Center(child: Text(e.toString())),
-    );
-  }
+  ConsumerState<AllScreen> createState() => _AllScreenState();
 }
-*/
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:todo_riverpod/views/today_screen.dart';
-import '../controller/todo_controller.dart';
 
-class AllScreen extends ConsumerWidget {
-  const AllScreen({super.key});
+class _AllScreenState extends ConsumerState<AllScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(todoControllerProvider.notifier).loadAll();
+    });
+  }
 
   @override
-  Widget build(context, ref) {
+  Widget build(BuildContext context) {
     final todos = ref.watch(todoControllerProvider);
 
     return todos.when(
       data: (list) {
         if (list.isEmpty) {
-          return const Center(
-            child: Text(
-              "No todos yet",
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          );
+          return const Center(child: Text("No todos yet"));
         }
 
         return RefreshIndicator(
           onRefresh: () async {
-            await ref.read(todoControllerProvider.notifier).getAllTodos();
+            await ref.read(todoControllerProvider.notifier).loadAll();
           },
           child: ListView.builder(
-            padding: const EdgeInsets.all(8),
             itemCount: list.length,
             itemBuilder: (_, i) {
               final t = list[i];
-              return Card(
-                color: Colors.green.shade50,
-                elevation: 1,
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                child: ListTile(
-                  title: Text(
-                    t.title,
-                    style: TextStyle(
-                      decoration: t.isCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  subtitle: Text(t.date.toString().substring(0, 10)),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.green),
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        builder: (_) {
-                          return CompleteBottomSheet(
-                            todoIndex: i,
-                            isCompleted: t.isCompleted,
-                          );
-                        },
+              return TodoCard(
+                todo: t,
+                onMoreTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) {
+                      bool tempStatus = t.isCompleted; // initially current status
+
+                      return AlertDialog(
+                        title: const Text("Change Status"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            RadioListTile<bool>(
+                              title: const Text("Complete"),
+                              value: true,
+                              groupValue: tempStatus,
+                              onChanged: (v) {
+                                tempStatus = v!;
+                                (context as Element).markNeedsBuild();
+                              },
+                            ),
+                            RadioListTile<bool>(
+                              title: const Text("Incomplete"),
+                              value: false,
+                              groupValue: tempStatus,
+                              onChanged: (v) {
+                                tempStatus = v!;
+                                (context as Element).markNeedsBuild();
+                              },
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            child: const Text("Cancel"),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          TextButton(
+                            child: const Text("OK"),
+                            onPressed: () {
+                              // update todo status inside Riverpod controller
+                              ref.read(todoControllerProvider.notifier).updateStatus(
+                                t,
+                                tempStatus,
+                              );
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
                       );
                     },
-                  ),
-                ),
+                  );
+                },
               );
             },
           ),

@@ -9,40 +9,43 @@ class TodoController extends _$TodoController {
 
   @override
   Future<List<TodoModel>> build() async {
-    // app open হলে আজকের todo load হবে
-    return await getTodayTodos();
+    return [];
   }
 
-  // ===== GET =====
-
-  Future<List<TodoModel>> getAllTodos() async {
+  // LOAD ALL
+  Future<void> loadAll() async {
     final list = await TodoDatabase.instance.getAll();
     state = AsyncData(list);
-    return list;
   }
 
-  Future<List<TodoModel>> getTodayTodos() async {
+  // LOAD TODAY
+  Future<void> loadToday() async {
     final list = await TodoDatabase.instance.getToday();
     state = AsyncData(list);
-    return list;
   }
 
-  // ===== CREATE =====
+  // ADD TODO
   Future<void> addTodo(TodoModel todo) async {
     await TodoDatabase.instance.create(todo);
-    await getTodayTodos();  // refresh today
+    await loadToday();
   }
 
-  // ===== TOGGLE =====
-  Future<void> toggle(int index) async {
-    final todos = state.value ?? [];
-    final todo = todos[index];
 
+  // UPDATE STATUS (complete / incomplete)
+  Future<void> updateStatus(TodoModel todo, bool isCompleted) async {
+    // DB update
     await TodoDatabase.instance.update(
       todo.id!,
-      !todo.isCompleted,
+      isCompleted,
     );
 
-    await getTodayTodos();
+    // local update
+    todo.isCompleted = isCompleted;
+
+    // UI refresh
+    final current = state.value ?? [];
+    state = AsyncData([...current]);
   }
+
 }
+
